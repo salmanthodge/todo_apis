@@ -1,8 +1,12 @@
+require("dotenv").config()
+
 const conn = require("../../../../config/database");
 const userValidators = require("./validators")
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken")
 const saltRounds = 10
+
+const jwt_key = process.env.JWT_SECRET_KEY
 
 const userController ={}
 
@@ -69,7 +73,7 @@ userController.loginUser = async (req, res) => {
         message: "Incorrect password",
       });
     }
-    const token = jwt.sign({ user_id: result[0].id }, "test");
+    const token = jwt.sign({ user_id: result[0].id },jwt_key );
     res.status(200).send({
       statusCode:200,
       message: "Login Successfully",
