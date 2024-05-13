@@ -9,7 +9,9 @@ taskController.addTasks = async (req, res, next) => {
     return res.status(400).json({ message: error.details[0].message });
   }
   try {
-    const { task_name, description, user_id } = req.body;
+    const {user_id} = req.headers
+    const { task_name, description } = req.body;
+    console.log(user_id)
 
     let queryString = `insert into tasks
         (task_name, description ,user_id)
@@ -24,7 +26,7 @@ taskController.addTasks = async (req, res, next) => {
       result,
     });
   } catch (error) {
-    // console.log(error);
+    console.log(error);
     return res.status(500).send({
       statusCode: 500,
       message: "Error while adding task",
@@ -35,10 +37,10 @@ taskController.addTasks = async (req, res, next) => {
 
 taskController.getTasks = async (req, res, next) => {
   try {
-    const { user_id } = req.params;
-    // console.log(req.params)
+    const { user_id } = req.headers;
+    console.log("req.headers",req.headers.user_id)
     if (!user_id) {
-      res.status(400).send({
+      return res.status(400).send({
         statusCode: 400,
         message: "userId not found",
       });
@@ -124,6 +126,30 @@ taskController.getTasks = async (req, res, next) => {
 taskController.updateTask = async (req, res, next) => {
   try {
     const { task_id } = req.params;
+
+    const { user_id } = req.headers; 
+
+    if (!task_id && !user_id) {
+      return res.status(400).send({
+        statusCode: 400,
+        message: "taskId and userId are required",
+      });
+    }
+
+    // Check if the task exists for the given user
+    const taskQuery = `SELECT * FROM tasks WHERE task_id = ? AND user_id = ?`;
+    const [taskResult] = await conn.promise().query(taskQuery, [task_id, user_id]);
+    // console.log("taskResult",taskResult)
+    const task = taskResult[0];
+    // console.log("task",task)
+
+    if (!task) {
+      return res.status(404).send({
+        statusCode: 404,
+        message: "Task not found for the specified user",
+      });
+    }
+
     const { status, start_date, end_date } = req.body;
     // console.log(task_id)
 
@@ -201,10 +227,27 @@ taskController.deleteTask = async (req, res, next) => {
   try {
     const { task_id } = req.params;
 
-    if (!task_id) {
+    const { user_id } = req.headers; 
+    // console.log(user_id,task_id)
+
+    if (!task_id && !user_id) {
       return res.status(400).send({
         statusCode: 400,
-        message: "taskId not found",
+        message: "taskId and userId are required",
+      });
+    }
+
+    // Check if the task exists for the given user
+    const taskQuery = `SELECT * FROM tasks WHERE task_id = ? AND user_id = ?`;
+    const [taskResult] = await conn.promise().query(taskQuery, [task_id, user_id]);
+    // console.log("taskResult",taskResult)
+    const task = taskResult[0];
+    // console.log("task",task)
+
+    if (!task) {
+      return res.status(404).send({
+        statusCode: 404,
+        message: "Task not found for the specified user",
       });
     }
 

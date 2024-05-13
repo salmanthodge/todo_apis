@@ -4,7 +4,14 @@ const jwt = require("jsonwebtoken");
 const jwt_key = process.env.JWT_SECRET_KEY
 
 const authMiddleware = (req, res, next) => {
-    // const { user_id, token } = req.headers;
+    const { user_id, token } = req.headers;
+    console.log(req.headers)
+    if(!user_id && !token) {
+      return res.status(400).send({
+        statusCode: 400,
+        message: "missing parameters in headers"
+      })
+    }
     if (req.headers  && req.headers.token) {
       try {
         const token = req.headers.token;
